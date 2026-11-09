@@ -15,7 +15,7 @@ Cada descarga o impresión queda registrada en la hoja **Gafetes** (fecha, hora,
 |---|---|
 | `apps-script/Code.gs` | Backend de Apps Script: sirve la página y escribe la bitácora. |
 | `apps-script/Index.html` | El generador (HTML autocontenido, con logotipos incrustados). |
-| `whatsapp/` | Copia de la página puente con la vista previa para WhatsApp. La versión publicada vive en `rhinobuild.github.io/gafetes/`. |
+| `index.html` + `preview.jpg` | Página puente (GitHub Pages): muestra la tarjeta de vista previa en WhatsApp y redirige al generador. |
 
 ## Despliegue del generador
 
@@ -27,4 +27,8 @@ Implementación actual:
 
 ## Enlace para compartir
 
-`https://rhinobuild.github.io/gafetes/?v=3` — si WhatsApp muestra una vista previa vieja, sube el número de `v`.
+`https://rhinobuild.github.io/GAFETES_SLH/?v=3` — si WhatsApp muestra una vista previa vieja, sube el número de `v`.
+
+El enlace anterior (`rhinobuild.github.io/gafetes/`) redirige aquí.
+
+GitHub Pages: Settings → Pages → Deploy from a branch → `main` / `(root)`.
