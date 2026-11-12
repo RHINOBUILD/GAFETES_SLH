@@ -131,6 +131,10 @@
         <input type="text" id="fPuesto" maxlength="60" placeholder="Ej. Director de Capital Humano" autocomplete="off">
       </div>
       <p class="amb-note" id="ambNote">Operador de ambulancia: se agrega el icono en la esquina de la foto.</p>
+      <div class="field" id="licenciaField" hidden>
+        <label for="fLicencia">Vigencia de la licencia <small>obligatorio para operadores</small></label>
+        <input type="date" id="fLicencia">
+      </div>
       <div class="field" id="codigoField" hidden>
         <label for="fCodigo">Código de barras <small>se llena solo; puedes editarlo</small></label>
         <input type="text" id="fCodigo" maxlength="40" autocomplete="off" spellcheck="false" placeholder="BWBPNOMBREAPELLIDO">
@@ -1488,7 +1492,8 @@ let PHOTO = PHOTO_SLH;   // cambia según el diseño elegido
 
 /* ---------- Diseños de ambulancias ---------- */
 const DESIGNS = {
-  slh:      { label: "Saint Luke's", note: 'Hospitales', photo: PHOTO_SLH },
+  slh:      { label: "Saint Luke's", note: 'Hospitales', photo: PHOTO_SLH,
+              icon:  { x: 396, y: 553, w: 99, h: 70, r: 11 } },
   baywatch: { label: 'Baywatch', note: 'Ambulancias · Baywatch Beach Patrol', prefix: 'BWBP',
               photo: { x: 58, y: 201, w: 425, h: 404, r: 25 },
               icon:  { x: 398, y: 557, w: 99, h: 70, r: 11 } },
@@ -1679,6 +1684,7 @@ function drawSLH(ctx){
   ctx.strokeStyle = '#E4E7EE'; ctx.lineWidth = 1; ctx.stroke();
 
   drawPhoto(ctx);
+  if (isOperador(val('fPuesto'))) drawAmbulanceIcon(ctx, DESIGNS.slh.icon, COLORS.purple);
 
   // Nombre (una línea; si no cabe, dos) y puesto
   const nombre = val('fNombre');
@@ -2113,7 +2119,9 @@ function syncCodigo(){
   if (d.prefix && !state.codigoEditado) $('fCodigo').value = suggestCode(val('fNombre'), d.prefix);
 }
 function syncAmbNote(){
-  $('ambNote').classList.toggle('on', state.design !== 'slh' && isOperador(val('fPuesto')));
+  const op = isOperador(val('fPuesto'));
+  $('ambNote').classList.toggle('on', op);
+  $('licenciaField').hidden = !op;
 }
 function setDesign(key){
   state.design = DESIGNS[key] ? key : 'slh';
@@ -2144,7 +2152,7 @@ $('btnNuevo').addEventListener('click', () => {
     return;
   }
   delete b.dataset.armed; b.textContent = 'Nuevo gafete';
-  $('fNombre').value = ''; $('fPuesto').value = ''; $('fCodigo').value = '';
+  $('fNombre').value = ''; $('fPuesto').value = ''; $('fCodigo').value = ''; $('fLicencia').value = '';
   state.codigoEditado = false; syncAmbNote();
   clearPhoto(); setStatus(''); $('fNombre').focus();
 });
@@ -2152,6 +2160,11 @@ $('btnNuevo').addEventListener('click', () => {
 async function prepare(){
   if (!val('fNombre')){ setStatus('Escribe el nombre del colaborador.', 'err'); $('fNombre').focus(); return false; }
   if (state.design === 'baywatch' && !currentCode()){ setStatus('Escribe el código de barras.', 'err'); $('fCodigo').focus(); return false; }
+  if (isOperador(val('fPuesto'))){
+    const v = val('fLicencia');
+    if (!v){ setStatus('Escribe la vigencia de la licencia del operador.', 'err'); $('fLicencia').focus(); return false; }
+    if (v < new Date().toISOString().slice(0, 10)) setStatus('Aviso: la licencia del operador está vencida.', 'warn');
+  }
   if (!state.photo) setStatus('Aviso: el gafete no tiene fotografía.', 'warn');
   await Promise.all([fontsReady, allLogosReady]);
   return true;
@@ -2169,7 +2182,8 @@ function registrar(accion){
   google.script.run
     .withFailureHandler(e => console.warn('No se registró en la bitácora', e))
     .registrarGafete({ nombre: val('fNombre'), puesto: val('fPuesto'), accion,
-                       diseno: DESIGNS[state.design].label, codigo: currentCode() });
+                       diseno: DESIGNS[state.design].label, codigo: currentCode(),
+                       licencia: isOperador(val('fPuesto')) ? val('fLicencia') : '' });
 }
 
 $('btnPng').addEventListener('click', () => busy($('btnPng'), 'Preparando…', async () => {

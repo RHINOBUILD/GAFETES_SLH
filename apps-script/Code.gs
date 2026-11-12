@@ -13,11 +13,13 @@
  *     Versión: Nueva versión → Implementar. La URL /exec se mantiene.
  *
  * Si la hoja "Gafetes" ya existe, el encabezado se amplía solo con las
- * columnas nuevas (Diseño, Código de barras); los registros previos no cambian.
+ * columnas nuevas (Diseño, Código de barras, Vigencia licencia); los registros
+ * previos no cambian. El operador de ambulancia (cualquier diseño) lleva el icono
+ * de ambulancia y debe registrar la vigencia de su licencia.
  */
 
 const SHEET_NAME = 'Gafetes';
-const HEADERS = ['Fecha', 'Hora', 'Nombre', 'Puesto', 'Acción', 'Generado por', 'Diseño', 'Código de barras'];
+const HEADERS = ['Fecha', 'Hora', 'Nombre', 'Puesto', 'Acción', 'Generado por', 'Diseño', 'Código de barras', 'Vigencia licencia'];
 const DISENOS = ["Saint Luke's", 'Baywatch', 'Richport'];
 
 function doGet() {
@@ -46,7 +48,8 @@ function registrarGafete(d) {
       d.accion === 'Impresión' ? 'Impresión' : 'Descarga',
       usuario,
       diseno,
-      clean_(d.codigo, 60)
+      clean_(d.codigo, 60),
+      fechaLicencia_(d.licencia)
     ]);
     return true;
   } finally {
@@ -62,6 +65,7 @@ function getSheet_() {
     sh.appendRow(HEADERS);
     sh.setFrozenRows(1);
     sh.getRange('A:B').setNumberFormat('@');
+    sh.getRange('I:I').setNumberFormat('@');
   }
   // Amplía el encabezado si la hoja venía de la versión anterior (6 columnas)
   if (sh.getLastColumn() < HEADERS.length) {
@@ -70,6 +74,12 @@ function getSheet_() {
   sh.getRange(1, 1, 1, HEADERS.length)
     .setFontWeight('bold').setBackground('#0A1F38').setFontColor('#C9A227');
   return sh;
+}
+
+/** 'aaaa-mm-dd' del formulario → 'dd/mm/aaaa'; vacío si no es operador. */
+function fechaLicencia_(v) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || ''));
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
 }
 
 function clean_(v, max) {
