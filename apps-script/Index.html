@@ -130,7 +130,7 @@
         <label for="fPuesto">Puesto</label>
         <input type="text" id="fPuesto" maxlength="60" placeholder="Ej. Director de Capital Humano" autocomplete="off">
       </div>
-      <p class="amb-note" id="ambNote">Operador de ambulancia: se agrega el icono en la esquina de la foto.</p>
+      <p class="amb-note" id="ambNote">Operador de ambulancia: se agregan el icono y la vigencia de la licencia sobre la foto.</p>
       <div class="field" id="licenciaField" hidden>
         <label for="fLicencia">Vigencia de la licencia <small>obligatorio para operadores</small></label>
         <input type="date" id="fLicencia">
@@ -1684,7 +1684,10 @@ function drawSLH(ctx){
   ctx.strokeStyle = '#E4E7EE'; ctx.lineWidth = 1; ctx.stroke();
 
   drawPhoto(ctx);
-  if (isOperador(val('fPuesto'))) drawAmbulanceIcon(ctx, DESIGNS.slh.icon, COLORS.purple);
+  if (isOperador(val('fPuesto'))){
+    drawAmbulanceIcon(ctx, DESIGNS.slh.icon, COLORS.purple);
+    drawLicenseTag(ctx, DESIGNS.slh.icon, COLORS.purple);
+  }
 
   // Nombre (una línea; si no cabe, dos) y puesto
   const nombre = val('fNombre');
@@ -1780,6 +1783,27 @@ function drawLogoImg(ctx, img, maxW, maxH, y){
   ctx.drawImage(img, (W - lw) / 2, y, lw, lh);
 }
 
+/* Etiqueta de vigencia de licencia (operador): esquina inferior izquierda de la
+   foto, simétrica al icono de ambulancia y del mismo color. */
+function licenciaTexto(){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(val('fLicencia'));
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+}
+function drawLicenseTag(ctx, icon, color){
+  const fecha = licenciaTexto();
+  const h = 58, w = 178, x = W - (icon.x + icon.w), y = icon.y + icon.h - h;
+  ctx.save();
+  rr(ctx, x, y, w, h, icon.r); ctx.fillStyle = color; ctx.fill();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(255,255,255,.88)';
+  ctx.font = font('normal', 600, 12.5);
+  ctx.fillText('LICENCIA VIGENTE HASTA', x + w / 2, y + 21);
+  ctx.fillStyle = fecha ? '#fff' : 'rgba(255,255,255,.55)';
+  ctx.font = font('normal', 700, 22);
+  ctx.fillText(fecha || 'dd/mm/aaaa', x + w / 2, y + 45);
+  ctx.restore();
+}
+
 /* Icono de ambulancia (operador): recuadro de color con dibujo en línea blanca. */
 function drawAmbulanceIcon(ctx, b, color){
   ctx.save();
@@ -1855,7 +1879,7 @@ function drawBaywatch(ctx){
 
   drawLogoImg(ctx, LOGOS.baywatch.img, 462, 150, 32);
   drawPhoto(ctx);
-  if (isOperador(val('fPuesto'))) drawAmbulanceIcon(ctx, d.icon, BW.blue);
+  if (isOperador(val('fPuesto'))){ drawAmbulanceIcon(ctx, d.icon, BW.blue); drawLicenseTag(ctx, d.icon, BW.blue); }
 
   drawNameRole(ctx, {
     maxW: 500, placeholder: BW.placeholder,
@@ -1900,7 +1924,7 @@ function drawRichport(ctx){
   drawRichportPattern(ctx);
   drawLogoImg(ctx, LOGOS.richport.img, 474, 120, 44);
   drawPhoto(ctx);
-  if (isOperador(val('fPuesto'))) drawAmbulanceIcon(ctx, d.icon, RP.navy);
+  if (isOperador(val('fPuesto'))){ drawAmbulanceIcon(ctx, d.icon, RP.navy); drawLicenseTag(ctx, d.icon, RP.navy); }
 
   // Fondo blanco suave detrás del texto para que el patrón no estorbe
   ctx.save();
@@ -2135,6 +2159,8 @@ document.querySelectorAll('input[name="diseno"]').forEach(r => r.addEventListene
 
 $('fNombre').addEventListener('input', () => { syncCodigo(); render(); });
 $('fPuesto').addEventListener('input', () => { syncAmbNote(); render(); });
+$('fLicencia').addEventListener('input', render);
+$('fLicencia').addEventListener('change', render);
 $('fCodigo').addEventListener('input', () => {
   const c = $('fCodigo');
   const pos = c.selectionStart, clean = cleanCode(c.value);
